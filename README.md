@@ -1,7 +1,10 @@
 PiCloud
 =======
 
-Shell script for installing Owncloud on the Raspberry Pi
+Shell script for installing Owncloud on the Raspberry Pi. The script installs the Apache 2 webserver together with some needed Apache modules and the SQLite database package. Afterwards it downloads and installs Owncloud 4.0.5, which is the newest release at this time. 
+
+This script was tested on the Raspbian distribution from 2012-07-15.
+
 
 First of all, make sure that Git is installed:
 
@@ -24,8 +27,6 @@ cd PiCloud
 chmod +x picloud_setup.sh
 ./picloud_setup.sh
 ```
-
-The script installs the Apache 2 webserver together with some needed Apache modules and the SQLite database package. Afterwards it downloads and installs Owncloud 4.0.5, which is the newest release at this time. 
 
 For more information visit the blog at http://petrockblog.wordpress.com or the repository at https://github.com/petrockblog/PiCloud.
 
