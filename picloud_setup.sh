@@ -40,7 +40,7 @@ apt-get install -y apache2 openssl ssl-cert libapache2-mod-php5 php5-cli php5-sq
 openssl req $@ -new -x509 -days 365 -nodes -out /etc/apache2/apache.pem -keyout /etc/apache2/apache.pem
 chmod 600 /etc/apache2/apache.pem
 
-# enable Apache modules (ssl IS definitely required, I am not sure about the other two here)
+# enable Apache modules (as explained at http://owncloud.org/support/install/, Section 2.3)
 a2enmod ssl
 a2enmod rewrite
 a2enmod headers
@@ -52,11 +52,15 @@ sed 's|/etc/ssl/certs/ssl-cert-snakeoil.pem|/etc/apache2/apache.pem|g;s|AllowOve
 # enable SSL site
 a2ensite default-ssl
 
-# download and extract Owncloud 4.0.5 (the newest release at this time)
-wget http://download.owncloud.org/releases/owncloud-4.0.5.tar.bz2
-tar -xjf owncloud-4.0.5.tar.bz2
+# download and extract the latest release of Owncloud (4.0.6 at this time)
+wget http://owncloud.org/releases/Changelog
+latestrelease=$(cat Changelog | grep Download | head -n 1)
+latestrelease=${latestrelease:10}
+wget "$latestrelease"
+tar -xjf "$(basename $latestrelease)"
 mv owncloud /var/www/
-rm owncloud-4.0.5.tar.bz2
+rm "$(basename $latestrelease)"
+rm Changelog
 
 # change group and owner of all /var/www files recursively to www-data
 chown -R www-data:www-data /var/www
