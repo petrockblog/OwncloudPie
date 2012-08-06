@@ -46,8 +46,9 @@ a2enmod rewrite
 a2enmod headers
 
 # configure Apache to use self-signed certificate
-cp /etc/apache2/sites-available/default-ssl /etc/apache2/sites-available/default-ssl.bak
-sed 's|/etc/ssl/certs/ssl-cert-snakeoil.pem|/etc/apache2/apache.pem|g;s|AllowOverride None|AllowOverride All|g;s|SSLCertificateKeyFile|# SSLCertificateKeyFile|g' /etc/apache2/sites-available/default-ssl.bak >> /etc/apache2/sites-available/default-ssl
+mv /etc/apache2/sites-available/default-ssl /etc/apache2/sites-available/default-ssl.bak
+sed 's|/etc/ssl/certs/ssl-cert-snakeoil.pem|/etc/apache2/apache.pem|g;s|AllowOverride None|AllowOverride All|g;s|SSLCertificateKeyFile|# SSLCertificateKeyFile|g' /etc/apache2/sites-available/default-ssl.bak > tmp
+mv tmp /etc/apache2/sites-available/default-ssl
 
 # enable SSL site
 a2ensite default-ssl
@@ -71,3 +72,4 @@ chown -R www-data:www-data /var/www
 # finish the script
 myipaddress=$(hostname -I | tr -d ' ')
 echo -e "\n= = = = = = = = = = =\nIf everything went right, Owncloud should now be available at the URL https://$myipaddress/owncloud\n= = = = = = = = = = =\n"
+echo -e "You have to finish the setup for Owncloud there."
