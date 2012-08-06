@@ -25,7 +25,7 @@ The script is executed with
 ```shell
 cd PiCloud
 chmod +x picloud_setup.sh
-./picloud_setup.sh
+sudo ./picloud_setup.sh
 ```
 
 For more information visit the blog at http://petrockblog.wordpress.com or the repository at https://github.com/petrockblog/PiCloud.
