@@ -59,6 +59,11 @@ mv /etc/apache2/apache2.conf /etc/apache2/apache2.conf.bak
 sed 's|StartServers          5|StartServers          2|g;s|MinSpareServers       5|MinSpareServers       2|g;s|MaxSpareServers      10|MaxSpareServers       3|g' /etc/apache2/apache2.conf.bak > tmp
 mv tmp /etc/apache2/apache2.conf
 
+# set ARM frequency to 800 MHz (attention: do this at your own risk!!!)
+# mv /boot/config.txt /boot/config.txt.bak
+# sed 's|#arm_freq=800|arm_freq=800|g;' /boot/config.txt.bak > tmp
+# mv tmp /boot/config.txt
+
 # enable SSL site
 a2ensite default-ssl
 
