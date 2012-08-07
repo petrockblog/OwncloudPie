@@ -71,6 +71,11 @@ mv tmp /etc/apache2/apache2.conf
 # set ARM frequency to 800 MHz (attention: should be safe, but do this at your own risk!!!)
 echo -e "\narm_freq=800\nsdram_freq=450\ncore_freq=350" >> /boot/config.txt
 
+# resize swap file to 512 MB
+echo "CONF_SWAPSIZE=512" > /etc/dphys-swapfile
+dphys-swapfile setup
+dphys-swapfile swapon
+
 # enable SSL site
 a2ensite default-ssl
 
