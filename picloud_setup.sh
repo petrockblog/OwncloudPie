@@ -45,10 +45,19 @@ a2enmod ssl
 a2enmod rewrite
 a2enmod headers
 
+# disable unneccessary (for Owncloud) module(s)
+a2dismod cgi
+a2dismod authz_groupfile
+
 # configure Apache to use self-signed certificate
 mv /etc/apache2/sites-available/default-ssl /etc/apache2/sites-available/default-ssl.bak
 sed 's|/etc/ssl/certs/ssl-cert-snakeoil.pem|/etc/apache2/apache.pem|g;s|AllowOverride None|AllowOverride All|g;s|SSLCertificateKeyFile|# SSLCertificateKeyFile|g' /etc/apache2/sites-available/default-ssl.bak > tmp
 mv tmp /etc/apache2/sites-available/default-ssl
+
+# limit number of parallel Apache processes
+mv /etc/apache2/apache2.conf /etc/apache2/apache2.conf.bak 
+sed 's|StartServers          5|StartServers          2|g;s|MinSpareServers       5|MinSpareServers       2|g;s|MaxSpareServers      10|MaxSpareServers       3|g' /etc/apache2/apache2.conf.bak > tmp
+mv tmp /etc/apache2/apache2.conf
 
 # enable SSL site
 a2ensite default-ssl
