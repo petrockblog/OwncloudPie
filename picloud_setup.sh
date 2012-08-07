@@ -26,15 +26,24 @@
 #  Raspberry Pi is a trademark of the Raspberry Pi Foundation.
 # 
 
+if [ $(id -u) -ne 0 ]; then
+  printf "Script must be run as root. Try 'sudo ./picloud_setup'\n"
+  exit 1
+fi
+
 # make sure we use the newest packages
 apt-get update
+apt-get upgrade
 
 # make sure that the group www-data exists
 groupadd www-data
 usermod -a -G www-data www-data
 
 # install all needed packages, e.g., Apache, PHP, SQLite
-apt-get install -y apache2 openssl ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc
+apt-get install -y apache2 openssl ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core
+
+# perform firmware update with 240 MB RAM, and 16 MB video
+rpi-update 240
 
 # generate self-signed certificate that is valid for one year
 openssl req $@ -new -x509 -days 365 -nodes -out /etc/apache2/apache.pem -keyout /etc/apache2/apache.pem
@@ -59,10 +68,8 @@ mv /etc/apache2/apache2.conf /etc/apache2/apache2.conf.bak
 sed 's|StartServers          5|StartServers          2|g;s|MinSpareServers       5|MinSpareServers       2|g;s|MaxSpareServers      10|MaxSpareServers       3|g' /etc/apache2/apache2.conf.bak > tmp
 mv tmp /etc/apache2/apache2.conf
 
-# set ARM frequency to 800 MHz (attention: do this at your own risk!!!)
-# mv /boot/config.txt /boot/config.txt.bak
-# sed 's|#arm_freq=800|arm_freq=800|g;' /boot/config.txt.bak > tmp
-# mv tmp /boot/config.txt
+# set ARM frequency to 800 MHz (attention: should be safe, but do this at your own risk!!!)
+echo -e "\narm_freq=800\nsdram_freq=450\ncore_freq=350" >> /boot/config.txt
 
 # enable SSL site
 a2ensite default-ssl
