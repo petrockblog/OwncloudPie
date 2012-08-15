@@ -10,7 +10,7 @@ First of all, make sure that Git is installed:
 
 ```shell
 sudo apt-get update
-sudo apt-get install -y git
+sudo apt-get install -y git dialog
 ```
 
 Then you can download the latest PiCloud setup script with
