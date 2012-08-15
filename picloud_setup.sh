@@ -26,76 +26,138 @@
 #  Raspberry Pi is a trademark of the Raspberry Pi Foundation.
 # 
 
+printMsg()
+{
+	echo -e "\n= = = = = = = = = = = = = = = = = = = = =\n$1\n= = = = = = = = = = = = = = = = = = = = =\n"
+}
+
+checkNeededPackages()
+{
+    doexit=0
+    type -P git &>/dev/null && echo "Found git command." || { echo "Did not find git. Try 'sudo apt-get install -y git' first."; doexit=1; }
+    type -P dialog &>/dev/null && echo "Found dialog command." || { echo "Did not find dialog. Try 'sudo apt-get install -y dialog' first."; doexit=1; }
+    if [[ doexit -eq 1 ]]; then
+        exit 1
+    fi
+}
+
+downloadLatestOwncloudRelease()
+{
+	clear
+	
+	if [[ ! -d /var/www/owncloud ]]; then
+		echo "Cannot find directory /var/www/owncloud. "
+		exit 1
+	fi
+
+	printMsg "Updating to latest Owncloud release."
+
+	# download and extract the latest release of Owncloud (4.0.6 at this time)
+	wget http://owncloud.org/releases/Changelog
+	latestrelease=$(cat Changelog | grep Download | head -n 1)
+	latestrelease=${latestrelease:10}
+	wget "$latestrelease"
+	tar -xjf "$(basename $latestrelease)"
+	rm "$(basename $latestrelease)"
+	rm Changelog
+}
+
+main_newinstall()
+{
+	clear 
+
+	# make sure we use the newest packages
+	apt-get update
+	apt-get upgrade
+
+	# make sure that the group www-data exists
+	groupadd www-data
+	usermod -a -G www-data www-data
+
+	# install all needed packages, e.g., Apache, PHP, SQLite
+	apt-get install -y apache2 openssl ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core
+
+	# perform firmware update with 240 MB RAM, and 16 MB video
+	rpi-update 240
+
+	# generate self-signed certificate that is valid for one year
+	openssl req $@ -new -x509 -days 365 -nodes -out /etc/apache2/apache.pem -keyout /etc/apache2/apache.pem
+	chmod 600 /etc/apache2/apache.pem
+
+	# enable Apache modules (as explained at http://owncloud.org/support/install/, Section 2.3)
+	a2enmod ssl
+	a2enmod rewrite
+	a2enmod headers
+
+	# disable unneccessary (for Owncloud) module(s)
+	a2dismod cgi
+	a2dismod authz_groupfile
+
+	# configure Apache to use self-signed certificate
+	mv /etc/apache2/sites-available/default-ssl /etc/apache2/sites-available/default-ssl.bak
+	sed 's|/etc/ssl/certs/ssl-cert-snakeoil.pem|/etc/apache2/apache.pem|g;s|AllowOverride None|AllowOverride All|g;s|SSLCertificateKeyFile|# SSLCertificateKeyFile|g' /etc/apache2/sites-available/default-ssl.bak > tmp
+	mv tmp /etc/apache2/sites-available/default-ssl
+
+	# limit number of parallel Apache processes
+	mv /etc/apache2/apache2.conf /etc/apache2/apache2.conf.bak 
+	sed 's|StartServers          5|StartServers          2|g;s|MinSpareServers       5|MinSpareServers       2|g;s|MaxSpareServers      10|MaxSpareServers       3|g' /etc/apache2/apache2.conf.bak > tmp
+	mv tmp /etc/apache2/apache2.conf
+
+	# set ARM frequency to 800 MHz (attention: should be safe, but do this at your own risk!!!)
+	echo -e "\narm_freq=800\nsdram_freq=450\ncore_freq=350" >> /boot/config.txt
+
+	# resize swap file to 512 MB
+	echo "CONF_SWAPSIZE=512" > /etc/dphys-swapfile
+	dphys-swapfile setup
+	dphys-swapfile swapon
+
+	# enable SSL site
+	a2ensite default-ssl
+
+	downloadLatestOwncloudRelease
+	mv owncloud /var/www/
+
+	# change group and owner of all /var/www files recursively to www-data
+	chown -R www-data:www-data /var/www
+
+	# restart Apache service
+	/etc/init.d/apache2 reload
+
+	# finish the script
+	myipaddress=$(hostname -I | tr -d ' ')
+    dialog --backtitle "PetRockBlock.com - PiCloud Setup." --msgbox "If everything went right, Owncloud should now be available at the URL https://$myipaddress/owncloud. You have to finish the setup by visiting that site." 20 60    
+}
+
+main_update()
+{
+	downloadLatestOwncloudRelease
+	cp -r owncloud/* /var/www/owncloud/
+	rm -rf owncloud
+
+    dialog --backtitle "PetRockBlock.com - PiCloud Setup." --msgbox "Finished upgrading Owncloud instance." 20 60    
+}
+
+# here starts the main script
+
+checkNeededPackages
+
 if [ $(id -u) -ne 0 ]; then
   printf "Script must be run as root. Try 'sudo ./picloud_setup'\n"
   exit 1
 fi
 
-# make sure we use the newest packages
-apt-get update
-apt-get upgrade
-
-# make sure that the group www-data exists
-groupadd www-data
-usermod -a -G www-data www-data
-
-# install all needed packages, e.g., Apache, PHP, SQLite
-apt-get install -y apache2 openssl ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core
-
-# perform firmware update with 240 MB RAM, and 16 MB video
-rpi-update 240
-
-# generate self-signed certificate that is valid for one year
-openssl req $@ -new -x509 -days 365 -nodes -out /etc/apache2/apache.pem -keyout /etc/apache2/apache.pem
-chmod 600 /etc/apache2/apache.pem
-
-# enable Apache modules (as explained at http://owncloud.org/support/install/, Section 2.3)
-a2enmod ssl
-a2enmod rewrite
-a2enmod headers
-
-# disable unneccessary (for Owncloud) module(s)
-a2dismod cgi
-a2dismod authz_groupfile
-
-# configure Apache to use self-signed certificate
-mv /etc/apache2/sites-available/default-ssl /etc/apache2/sites-available/default-ssl.bak
-sed 's|/etc/ssl/certs/ssl-cert-snakeoil.pem|/etc/apache2/apache.pem|g;s|AllowOverride None|AllowOverride All|g;s|SSLCertificateKeyFile|# SSLCertificateKeyFile|g' /etc/apache2/sites-available/default-ssl.bak > tmp
-mv tmp /etc/apache2/sites-available/default-ssl
-
-# limit number of parallel Apache processes
-mv /etc/apache2/apache2.conf /etc/apache2/apache2.conf.bak 
-sed 's|StartServers          5|StartServers          2|g;s|MinSpareServers       5|MinSpareServers       2|g;s|MaxSpareServers      10|MaxSpareServers       3|g' /etc/apache2/apache2.conf.bak > tmp
-mv tmp /etc/apache2/apache2.conf
-
-# set ARM frequency to 800 MHz (attention: should be safe, but do this at your own risk!!!)
-echo -e "\narm_freq=800\nsdram_freq=450\ncore_freq=350" >> /boot/config.txt
-
-# resize swap file to 512 MB
-echo "CONF_SWAPSIZE=512" > /etc/dphys-swapfile
-dphys-swapfile setup
-dphys-swapfile swapon
-
-# enable SSL site
-a2ensite default-ssl
-
-# download and extract the latest release of Owncloud (4.0.6 at this time)
-wget http://owncloud.org/releases/Changelog
-latestrelease=$(cat Changelog | grep Download | head -n 1)
-latestrelease=${latestrelease:10}
-wget "$latestrelease"
-tar -xjf "$(basename $latestrelease)"
-mv owncloud /var/www/
-rm "$(basename $latestrelease)"
-rm Changelog
-
-# change group and owner of all /var/www files recursively to www-data
-chown -R www-data:www-data /var/www
-
-# restart Apache service
-/etc/init.d/apache2 reload
-
-# finish the script
-myipaddress=$(hostname -I | tr -d ' ')
-echo -e "\n= = = = = = = = = = =\nIf everything went right, Owncloud should now be available at the URL https://$myipaddress/owncloud\n= = = = = = = = = = =\n"
-echo -e "You have to finish the setup for Owncloud there."
+while true; do
+    cmd=(dialog --backtitle "PetRockBlock.com - PiCloud Setup." --menu "Choose task." 22 76 16)
+    options=(1 "New installation"
+             2 "Update existing installation")
+    choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)    
+    if [ "$choice" != "" ]; then
+        case $choice in
+            1) main_newinstall ;;
+            2) main_update ;;
+        esac
+    else
+        break
+    fi
+done
+clear
