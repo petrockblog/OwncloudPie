@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#  PiCloud - Shell script for installing Owncloud on the Raspberry Pi.
+#  PiCloud - Shell script for installing and updating Owncloud on the Raspberry Pi.
 # 
 #  (c) Copyright 2012  Florian Müller (petrockblock@gmail.com)
 # 
-#  RetroPie-Setup homepage: https://github.com/petrockblog/PiCloud
+#  PiCloud homepage: https://github.com/petrockblog/PiCloud
 # 
 #  Permission to use, copy, modify and distribute PiCloud in both binary and
 #  source form, for non-commercial purposes, is hereby granted without fee,
