@@ -115,6 +115,7 @@ main_newinstall()
 	a2ensite default-ssl
 
 	downloadLatestOwncloudRelease
+        mkdir -p /var/www
 	mv owncloud /var/www/
 
 	# change group and owner of all /var/www files recursively to www-data
