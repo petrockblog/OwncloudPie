@@ -119,13 +119,8 @@ main_newinstall()
 
 	mkdir -p /var/www/owncloud
 	downloadLatestOwncloudRelease
-<<<<<<< HEAD
-        mkdir -p /var/www
-	mv owncloud /var/www/
-=======
 	cp -r owncloud/* /var/www/owncloud/
 	rm -rf owncloud
->>>>>>> Fixed missing rpi-update tool, fixed bug that made the own cloud installation fail
 
 	# change group and owner of all /var/www files recursively to www-data
 	chown -R www-data:www-data /var/www
