@@ -68,19 +68,22 @@ main_newinstall()
 
 	# make sure we use the newest packages
 	apt-get update
-	apt-get upgrade
+	apt-get upgrade -y
 
 	# make sure that the group www-data exists
 	groupadd www-data
 	usermod -a -G www-data www-data
 
 	# install all needed packages, e.g., Apache, PHP, SQLite
-	apt-get install -y apache2 openssl ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core
+	apt-get install -y apache2 openssl ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core ca-certificates
 
 	# perform firmware update with 240 MB RAM, and 16 MB video
+	wget http://goo.gl/1BOfJ -O /usr/bin/rpi-update && chmod +x /usr/bin/rpi-update
 	rpi-update 240
 
 	# generate self-signed certificate that is valid for one year
+    dialog --backtitle "PetRockBlock.com - PiCloud Setup." --msgbox "We are now going to create a self-signed certificate. You can simply press ENTER when you are asked for country name etc. or enter whatever you want." 20 60    
+	clear
 	openssl req $@ -new -x509 -days 365 -nodes -out /etc/apache2/apache.pem -keyout /etc/apache2/apache.pem
 	chmod 600 /etc/apache2/apache.pem
 
@@ -103,7 +106,7 @@ main_newinstall()
 	sed 's|StartServers          5|StartServers          2|g;s|MinSpareServers       5|MinSpareServers       2|g;s|MaxSpareServers      10|MaxSpareServers       3|g' /etc/apache2/apache2.conf.bak > tmp
 	mv tmp /etc/apache2/apache2.conf
 
-	# set ARM frequency to 800 MHz (attention: should be safe, but do this at your own risk!!!)
+	# set ARM frequency to 800 MHz (attention: should be safe, but do this at your own risk)
 	echo -e "\narm_freq=800\nsdram_freq=450\ncore_freq=350" >> /boot/config.txt
 
 	# resize swap file to 512 MB
@@ -114,9 +117,15 @@ main_newinstall()
 	# enable SSL site
 	a2ensite default-ssl
 
+	mkdir -p /var/www/owncloud
 	downloadLatestOwncloudRelease
+<<<<<<< HEAD
         mkdir -p /var/www
 	mv owncloud /var/www/
+=======
+	cp -r owncloud/* /var/www/owncloud/
+	rm -rf owncloud
+>>>>>>> Fixed missing rpi-update tool, fixed bug that made the own cloud installation fail
 
 	# change group and owner of all /var/www files recursively to www-data
 	chown -R www-data:www-data /var/www
@@ -126,7 +135,9 @@ main_newinstall()
 
 	# finish the script
 	myipaddress=$(hostname -I | tr -d ' ')
-    dialog --backtitle "PetRockBlock.com - PiCloud Setup." --msgbox "If everything went right, Owncloud should now be available at the URL https://$myipaddress/owncloud. You have to finish the setup by visiting that site." 20 60    
+    dialog --backtitle "PetRockBlock.com - PiCloud Setup." --msgbox "If everything went right, Owncloud should now be available at the URL https://$myipaddress/owncloud. You have to finish the setup by visiting that site. Before that, we are going to reboot the Raspberry." 20 60    
+    
+    reboot
 }
 
 main_update()
