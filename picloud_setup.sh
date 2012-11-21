@@ -26,12 +26,40 @@
 #  Raspberry Pi is a trademark of the Raspberry Pi Foundation.
 # 
 
-printMsg()
+function printMsg()
 {
 	echo -e "\n= = = = = = = = = = = = = = = = = = = = =\n$1\n= = = = = = = = = = = = = = = = = = = = =\n"
 }
 
-checkNeededPackages()
+# arg 1: key, arg 2: value, arg 3: file
+function ensureKeyValue()
+{
+    if [[ -z $(egrep -i ";? *$1 = [0-9]*[M]?" $3) ]]; then
+        # add key-value pair
+        echo "$1 = $2" >> $3
+    else
+        # replace existing key-value pair
+        toreplace=`egrep -i ";? *$1 = [0-9]*[M]?" $3`
+        sed $3 -i -e "s|$toreplace|$1 = $2|g"
+    fi     
+}
+
+# arg 1: key, arg 2: value, arg 3: file
+# make sure that a key-value pair is set in file
+# key=value
+function ensureKeyValueShort()
+{
+    if [[ -z $(egrep -i "#? *$1\s?=\s?""?[+|-]?[0-9]*[a-z]*"""? $3) ]]; then
+        # add key-value pair
+        echo "$1=""$2""" >> $3
+    else
+        # replace existing key-value pair
+        toreplace=`egrep -i "#? *$1\s?=\s?""?[+|-]?[0-9]*[a-z]*"""? $3`
+        sed $3 -i -e "s|$toreplace|$1=""$2""|g"
+    fi     
+}
+
+function checkNeededPackages()
 {
     doexit=0
     type -P git &>/dev/null && echo "Found git command." || { echo "Did not find git. Try 'sudo apt-get install -y git' first."; doexit=1; }
@@ -41,7 +69,7 @@ checkNeededPackages()
     fi
 }
 
-downloadLatestOwncloudRelease()
+function downloadLatestOwncloudRelease()
 {
 	clear
 	
@@ -62,7 +90,68 @@ downloadLatestOwncloudRelease()
 	rm Changelog
 }
 
-main_newinstall()
+function writeServerConfig()
+{
+	cat > /etc/nginx/sites-available/default << _EOF_
+# owncloud
+server {
+  listen 80;
+    server_name smorrebronson.homedns.org;
+    rewrite ^ https://\$server_name\$request_uri? permanent;  # enforce https
+}
+
+# owncloud (ssl/tls)
+server {
+  listen 443 ssl;
+  server_name smorrebronson.homedns.org;
+  ssl_certificate /etc/nginx/cert.pem;
+  ssl_certificate_key /etc/nginx/cert.key;
+  root /var/www/owncloud;
+  index index.php;
+  client_max_body_size 1000M; # set maximum upload size
+
+  # deny direct access
+  location ~ ^/(data|config|\.ht|db_structure\.xml|README) {
+    deny all;
+  }
+
+  # default try order
+  location / {
+    try_files \$uri \$uri/ @webdav;
+  }
+
+  # owncloud WebDAV
+  location @webdav {
+    fastcgi_split_path_info ^(.+\.php)(/.*)$;
+    fastcgi_pass 127.0.0.1:9000;
+    fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+    fastcgi_param HTTPS on;
+    include fastcgi_params;
+  }
+
+  # enable php
+  location ~ \.php$ {
+    fastcgi_pass 127.0.0.1:9000;
+    fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+    fastcgi_param HTTPS on;
+    include fastcgi_params;
+  }
+}
+_EOF_
+}
+
+function main_setservername()
+{
+    cmd=(dialog --backtitle "PetRockBlock.com - PiCloud Setup." --inputbox "Please enter the URL of your Owncloud server." 22 76 16)
+    choices=$("${cmd[@]}" 2>&1 >/dev/tty)    
+    if [ "$choices" != "" ]; then
+        __servername=$choices
+    else
+        break
+    fi  
+}
+
+function main_newinstall_nginx()
 {
 	clear 
 
@@ -75,71 +164,137 @@ main_newinstall()
 	usermod -a -G www-data www-data
 
 	# install all needed packages, e.g., Apache, PHP, SQLite
-	apt-get install -y apache2 openssl ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core ca-certificates
+  apt-get remove -y apache2
+	apt-get install -y nginx openssl ssl-cert php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core
+	apt-get install -y autoconf automake autotools-dev curl libapr1 libtool curl libcurl4-openssl-dev php-xml-parser php5 php5-dev php5-gd php5-fpm
 
 	# perform firmware update with 240 MB RAM, and 16 MB video
-	wget http://goo.gl/1BOfJ -O /usr/bin/rpi-update && chmod +x /usr/bin/rpi-update
-	rpi-update 240
+  wget http://goo.gl/1BOfJ -O /usr/bin/rpi-update && chmod +x /usr/bin/rpi-update
+  rpi-update
+  ensureKeyValueShort "gpu_mem" "16" "/boot/config.txt"
 
 	# generate self-signed certificate that is valid for one year
-    dialog --backtitle "PetRockBlock.com - PiCloud Setup." --msgbox "We are now going to create a self-signed certificate. You can simply press ENTER when you are asked for country name etc. or enter whatever you want." 20 60    
-	clear
-	openssl req $@ -new -x509 -days 365 -nodes -out /etc/apache2/apache.pem -keyout /etc/apache2/apache.pem
-	chmod 600 /etc/apache2/apache.pem
+	openssl req $@ -new -x509 -days 365 -nodes -out /etc/nginx/cert.pem -keyout /etc/nginx/cert.key
+	chmod 600 /etc/nginx/cert.pem
+	chmod 600 /etc/nginx/cert.key
 
-	# enable Apache modules (as explained at http://owncloud.org/support/install/, Section 2.3)
-	a2enmod ssl
-	a2enmod rewrite
-	a2enmod headers
+	writeServerConfig
+	sed /etc/php5/fpm/pool.d/www.conf -i -e "s|listen = /var/run/php5-fpm.sock|listen = 127.0.0.1:9000|g"
 
-	# disable unneccessary (for Owncloud) module(s)
-	a2dismod cgi
-	a2dismod authz_groupfile
+  ensureKeyValue "upload_max_filesize" "1000M" "/etc/php5/fpm/php.ini"
+  ensureKeyValue "upload_tmp_dir" "/srv/http/owncloud/data" "/etc/php5/fpm/php.ini"
+  mkdir -p /srv/http/owncloud/data
 
-	# configure Apache to use self-signed certificate
-	mv /etc/apache2/sites-available/default-ssl /etc/apache2/sites-available/default-ssl.bak
-	sed 's|/etc/ssl/certs/ssl-cert-snakeoil.pem|/etc/apache2/apache.pem|g;s|AllowOverride None|AllowOverride All|g;s|SSLCertificateKeyFile|# SSLCertificateKeyFile|g' /etc/apache2/sites-available/default-ssl.bak > tmp
-	mv tmp /etc/apache2/sites-available/default-ssl
+  sed /etc/nginx/sites-available/default -i -e "s|client_max_body_size [0-9]*[M]?;|client_max_body_size 1000M;|g"
 
-	# limit number of parallel Apache processes
-	mv /etc/apache2/apache2.conf /etc/apache2/apache2.conf.bak 
-	sed 's|StartServers          5|StartServers          2|g;s|MinSpareServers       5|MinSpareServers       2|g;s|MaxSpareServers      10|MaxSpareServers       3|g' /etc/apache2/apache2.conf.bak > tmp
-	mv tmp /etc/apache2/apache2.conf
+	/etc/init.d/php5-fpm restart
+	/etc/init.d/nginx restart
 
-	# set ARM frequency to 800 MHz (attention: should be safe, but do this at your own risk)
-	echo -e "\narm_freq=800\nsdram_freq=450\ncore_freq=350" >> /boot/config.txt
+	# set ARM frequency to 800 MHz (or use the raspi-config tool to set clock speed)
+  ensureKeyValueShort "arm_freq" "800" "/boot/config.txt"
+  ensureKeyValueShort "sdram_freq" "450" "/boot/config.txt"
+  ensureKeyValueShort "core_freq" "350" "/boot/config.txt"
 
 	# resize swap file to 512 MB
-	echo "CONF_SWAPSIZE=512" > /etc/dphys-swapfile
+  ensureKeyValueShort "CONF_SWAPSIZE" "512" "/etc/dphys-swapfile"
 	dphys-swapfile setup
 	dphys-swapfile swapon
 
-	# enable SSL site
-	a2ensite default-ssl
-
-	mkdir -p /var/www/owncloud
-	downloadLatestOwncloudRelease
-	cp -r owncloud/* /var/www/owncloud/
-	rm -rf owncloud
+  mkdir -p /var/www/owncloud
+  downloadLatestOwncloudRelease
+	mv owncloud/ /var/www/
 
 	# change group and owner of all /var/www files recursively to www-data
 	chown -R www-data:www-data /var/www
 
-	# restart Apache service
-	/etc/init.d/apache2 reload
-
 	# finish the script
 	myipaddress=$(hostname -I | tr -d ' ')
+  dialog --backtitle "PetRockBlock.com - PiCloud Setup." --msgbox "If everything went right, Owncloud should now be available at the URL https://$myipaddress/owncloud. You have to finish the setup by visiting that site." 20 60    
+}
+
+function main_newinstall_apache()
+{
+  clear 
+
+  # make sure we use the newest packages
+  apt-get update
+  apt-get upgrade -y
+
+  # make sure that the group www-data exists
+  groupadd www-data
+  usermod -a -G www-data www-data
+
+  # install all needed packages, e.g., Apache, PHP, SQLite
+  apt-get install -y apache2 openssl ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core ca-certificates
+
+  # perform firmware update with 240 MB RAM, and 16 MB video
+  wget http://goo.gl/1BOfJ -O /usr/bin/rpi-update && chmod +x /usr/bin/rpi-update
+  rpi-update
+  ensureKeyValueShort "gpu_mem" "16" "/boot/config.txt"
+
+  # generate self-signed certificate that is valid for one year
+  dialog --backtitle "PetRockBlock.com - PiCloud Setup." --msgbox "We are now going to create a self-signed certificate. You can simply press ENTER when you are asked for country name etc. or enter whatever you want." 20 60    
+  clear
+  openssl req $@ -new -x509 -days 365 -nodes -out /etc/apache2/apache.pem -keyout /etc/apache2/apache.pem
+  chmod 600 /etc/apache2/apache.pem
+
+  # enable Apache modules (as explained at http://owncloud.org/support/install/, Section 2.3)
+  a2enmod ssl
+  a2enmod rewrite
+  a2enmod headers
+
+  # disable unneccessary (for Owncloud) module(s)
+  a2dismod cgi
+  a2dismod authz_groupfile
+
+  # configure Apache to use self-signed certificate
+  mv /etc/apache2/sites-available/default-ssl /etc/apache2/sites-available/default-ssl.bak
+  sed 's|/etc/ssl/certs/ssl-cert-snakeoil.pem|/etc/apache2/apache.pem|g;s|AllowOverride None|AllowOverride All|g;s|SSLCertificateKeyFile|# SSLCertificateKeyFile|g' /etc/apache2/sites-available/default-ssl.bak > tmp
+  mv tmp /etc/apache2/sites-available/default-ssl
+
+  # limit number of parallel Apache processes
+  mv /etc/apache2/apache2.conf /etc/apache2/apache2.conf.bak 
+  sed 's|StartServers          5|StartServers          2|g;s|MinSpareServers       5|MinSpareServers       2|g;s|MaxSpareServers      10|MaxSpareServers       3|g' /etc/apache2/apache2.conf.bak > tmp
+  mv tmp /etc/apache2/apache2.conf
+
+  # set ARM frequency to 800 MHz (attention: should be safe, but do this at your own risk)
+  ensureKeyValueShort "arm_freq" "800" "/boot/config.txt"
+  ensureKeyValueShort "sdram_freq" "450" "/boot/config.txt"
+  ensureKeyValueShort "core_freq" "350" "/boot/config.txt"
+
+  # resize swap file to 512 MB
+  ensureKeyValueShort "CONF_SWAPSIZE" "512" "/etc/dphys-swapfile"
+  dphys-swapfile setup
+  dphys-swapfile swapon
+
+  # enable SSL site
+  a2ensite default-ssl
+
+  mkdir -p /var/www/owncloud
+  downloadLatestOwncloudRelease
+  cp -r owncloud/* /var/www/owncloud/
+  rm -rf owncloud
+
+  # change group and owner of all /var/www files recursively to www-data
+  chown -R www-data:www-data /var/www
+
+  # restart Apache service
+  /etc/init.d/apache2 reload
+
+  # finish the script
+  myipaddress=$(hostname -I | tr -d ' ')
     dialog --backtitle "PetRockBlock.com - PiCloud Setup." --msgbox "If everything went right, Owncloud should now be available at the URL https://$myipaddress/owncloud. You have to finish the setup by visiting that site. Before that, we are going to reboot the Raspberry." 20 60    
     
     reboot
 }
 
-main_update()
+function main_update()
 {
 	downloadLatestOwncloudRelease
 	cp -r owncloud/* /var/www/owncloud/
 	rm -rf owncloud
+
+  chown -R www-data:www-data /var/www
 
     dialog --backtitle "PetRockBlock.com - PiCloud Setup." --msgbox "Finished upgrading Owncloud instance." 20 60    
 }
@@ -148,6 +303,8 @@ main_update()
 
 checkNeededPackages
 
+__servername="url.ofmyserver.com"
+
 if [ $(id -u) -ne 0 ]; then
   printf "Script must be run as root. Try 'sudo ./picloud_setup'\n"
   exit 1
@@ -155,13 +312,17 @@ fi
 
 while true; do
     cmd=(dialog --backtitle "PetRockBlock.com - PiCloud Setup." --menu "Choose task." 22 76 16)
-    options=(1 "New installation"
-             2 "Update existing installation")
+    options=(1 "Set server URL ($__servername)"
+             2 "New installation, NGiNX based"
+             3 "New installation, Apache based"
+             4 "Update existing Owncloud installation")
     choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)    
     if [ "$choice" != "" ]; then
         case $choice in
-            1) main_newinstall ;;
-            2) main_update ;;
+            1) main_setservername ;;
+            2) main_newinstall_nginx ;;
+            3) main_newinstall_apache ;;
+            4) main_update ;;
         esac
     else
         break
