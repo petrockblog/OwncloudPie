@@ -96,14 +96,14 @@ function writeServerConfig()
 # owncloud
 server {
   listen 80;
-    server_name smorrebronson.homedns.org;
+    server_name $__servername;
     rewrite ^ https://\$server_name\$request_uri? permanent;  # enforce https
 }
 
 # owncloud (ssl/tls)
 server {
   listen 443 ssl;
-  server_name smorrebronson.homedns.org;
+  server_name $__servername;
   ssl_certificate /etc/nginx/cert.pem;
   ssl_certificate_key /etc/nginx/cert.key;
   root /var/www/owncloud;
