@@ -106,7 +106,7 @@ server {
   server_name $__servername;
   ssl_certificate /etc/nginx/cert.pem;
   ssl_certificate_key /etc/nginx/cert.key;
-  root /var/www/owncloud;
+  root /var/www;
   index index.php;
   client_max_body_size 1000M; # set maximum upload size
 
