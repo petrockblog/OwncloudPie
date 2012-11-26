@@ -3,7 +3,7 @@ PiCloud
 
 Shell script for installing and updating Owncloud on the Raspberry Pi. The script either performs a new installation of the newest Owncloud release or, if already installed, performs an upgrade to the newest release. When doing a new installation the script installs the Apache 2 webserver together with some needed Apache modules and the SQLite database package. Afterwards it downloads and installs Owncloud 4.0.5, which is the newest release at this time. 
 
-This script was tested on the Raspbian distribution from 2012-07-15.
+This script was tested on the Raspbian distribution from 2012-10-28 with owncloud 4.5.2.
 
 
 First of all, make sure that Git is installed:
