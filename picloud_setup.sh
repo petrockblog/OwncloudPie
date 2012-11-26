@@ -80,7 +80,7 @@ function downloadLatestOwncloudRelease()
 
 	printMsg "Updating to latest Owncloud release."
 
-	# download and extract the latest release of Owncloud (4.0.6 at this time)
+	# download and extract the latest release of Owncloud (4.5.2 at this time)
 	wget http://owncloud.org/releases/Changelog
 	latestrelease=$(cat Changelog | grep Download | head -n 1)
 	latestrelease=${latestrelease:10}
