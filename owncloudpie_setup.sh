@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#  PiCloud - Shell script for installing and updating Owncloud on the Raspberry Pi.
+#  OwncloudPie - Shell script for installing and updating Owncloud on the Raspberry Pi.
 # 
 #  (c) Copyright 2012  Florian Müller (petrockblock@gmail.com)
 # 
-#  PiCloud homepage: https://github.com/petrockblog/PiCloud
+#  OwncloudPie homepage: https://github.com/petrockblog/OwncloudPie
 # 
-#  Permission to use, copy, modify and distribute PiCloud in both binary and
+#  Permission to use, copy, modify and distribute OwncloudPie in both binary and
 #  source form, for non-commercial purposes, is hereby granted without fee,
 #  providing that this license information and copyright notice appear with
 #  all copies and any derived work.
@@ -15,9 +15,9 @@
 #  warranty. In no event shall the authors be held liable for any damages
 #  arising from the use of this software.
 # 
-#  PiCloud is freeware for PERSONAL USE only. Commercial users should
+#  OwncloudPie is freeware for PERSONAL USE only. Commercial users should
 #  seek permission of the copyright holders first. Commercial use includes
-#  charging money for PiCloud or software derived from PiCloud.
+#  charging money for OwncloudPie or software derived from OwncloudPie.
 # 
 #  The copyright holders request that bug fixes and improvements to the code
 #  should be forwarded to them so everyone can benefit from the modifications
@@ -142,7 +142,7 @@ _EOF_
 
 function main_setservername()
 {
-    cmd=(dialog --backtitle "PetRockBlock.com - PiCloud Setup." --inputbox "Please enter the URL of your Owncloud server." 22 76 16)
+    cmd=(dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --inputbox "Please enter the URL of your Owncloud server." 22 76 16)
     choices=$("${cmd[@]}" 2>&1 >/dev/tty)    
     if [ "$choices" != "" ]; then
         __servername=$choices
@@ -209,7 +209,7 @@ function main_newinstall_nginx()
 
 	# finish the script
 	myipaddress=$(hostname -I | tr -d ' ')
-  dialog --backtitle "PetRockBlock.com - PiCloud Setup." --msgbox "If everything went right, Owncloud should now be available at the URL https://$myipaddress/owncloud. You have to finish the setup by visiting that site." 20 60    
+  dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "If everything went right, Owncloud should now be available at the URL https://$myipaddress/owncloud. You have to finish the setup by visiting that site." 20 60    
 }
 
 function main_newinstall_apache()
@@ -233,7 +233,7 @@ function main_newinstall_apache()
   ensureKeyValueShort "gpu_mem" "16" "/boot/config.txt"
 
   # generate self-signed certificate that is valid for one year
-  dialog --backtitle "PetRockBlock.com - PiCloud Setup." --msgbox "We are now going to create a self-signed certificate. You can simply press ENTER when you are asked for country name etc. or enter whatever you want." 20 60    
+  dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "We are now going to create a self-signed certificate. You can simply press ENTER when you are asked for country name etc. or enter whatever you want." 20 60    
   clear
   openssl req $@ -new -x509 -days 365 -nodes -out /etc/apache2/apache.pem -keyout /etc/apache2/apache.pem
   chmod 600 /etc/apache2/apache.pem
@@ -283,7 +283,7 @@ function main_newinstall_apache()
 
   # finish the script
   myipaddress=$(hostname -I | tr -d ' ')
-    dialog --backtitle "PetRockBlock.com - PiCloud Setup." --msgbox "If everything went right, Owncloud should now be available at the URL https://$myipaddress/owncloud. You have to finish the setup by visiting that site. Before that, we are going to reboot the Raspberry." 20 60    
+    dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "If everything went right, Owncloud should now be available at the URL https://$myipaddress/owncloud. You have to finish the setup by visiting that site. Before that, we are going to reboot the Raspberry." 20 60    
     
     reboot
 }
@@ -296,7 +296,7 @@ function main_update()
 
   chown -R www-data:www-data /var/www
 
-    dialog --backtitle "PetRockBlock.com - PiCloud Setup." --msgbox "Finished upgrading Owncloud instance." 20 60    
+    dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "Finished upgrading Owncloud instance." 20 60    
 }
 
 # here starts the main script
@@ -306,12 +306,12 @@ checkNeededPackages
 __servername="url.ofmyserver.com"
 
 if [ $(id -u) -ne 0 ]; then
-  printf "Script must be run as root. Try 'sudo ./picloud_setup'\n"
+  printf "Script must be run as root. Try 'sudo ./OwncloudPie_setup'\n"
   exit 1
 fi
 
 while true; do
-    cmd=(dialog --backtitle "PetRockBlock.com - PiCloud Setup." --menu "Choose task." 22 76 16)
+    cmd=(dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --menu "Choose task." 22 76 16)
     options=(1 "Set server URL ($__servername)"
              2 "New installation, NGiNX based"
              3 "New installation, Apache based"
