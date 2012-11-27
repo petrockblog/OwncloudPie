@@ -182,6 +182,8 @@ function main_newinstall_nginx()
 	sed /etc/php5/fpm/pool.d/www.conf -i -e "s|listen = /var/run/php5-fpm.sock|listen = 127.0.0.1:9000|g"
 
   ensureKeyValue "upload_max_filesize" "1000M" "/etc/php5/fpm/php.ini"
+  ensureKeyValue "post_max_size" "1000M" "/etc/php5/fpm/php.ini"
+
   ensureKeyValue "upload_tmp_dir" "/srv/http/owncloud/data" "/etc/php5/fpm/php.ini"
   mkdir -p /srv/http/owncloud/data
 
