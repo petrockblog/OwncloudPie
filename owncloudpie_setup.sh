@@ -174,6 +174,8 @@ function main_newinstall_nginx()
   ensureKeyValueShort "gpu_mem" "16" "/boot/config.txt"
 
 	# generate self-signed certificate that is valid for one year
+  dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "We are now going to create a self-signed certificate. While you could simply press ENTER when you are asked for country name etc. or enter whatever you want, it might be beneficial to have the web servers host name in the common name field of the certificate." 20 60    
+
 	openssl req $@ -new -x509 -days 365 -nodes -out /etc/nginx/cert.pem -keyout /etc/nginx/cert.key
 	chmod 600 /etc/nginx/cert.pem
 	chmod 600 /etc/nginx/cert.key
@@ -235,7 +237,7 @@ function main_newinstall_apache()
   ensureKeyValueShort "gpu_mem" "16" "/boot/config.txt"
 
   # generate self-signed certificate that is valid for one year
-  dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "We are now going to create a self-signed certificate. You can simply press ENTER when you are asked for country name etc. or enter whatever you want." 20 60    
+  dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "We are now going to create a self-signed certificate. While you could simply press ENTER when you are asked for country name etc. or enter whatever you want, it might be beneficial to have the web servers host name in the common name field of the certificate." 20 60    
   clear
   openssl req $@ -new -x509 -days 365 -nodes -out /etc/apache2/apache.pem -keyout /etc/apache2/apache.pem
   chmod 600 /etc/apache2/apache.pem
@@ -285,9 +287,9 @@ function main_newinstall_apache()
 
   # finish the script
   myipaddress=$(hostname -I | tr -d ' ')
-    dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "If everything went right, Owncloud should now be available at the URL https://$myipaddress/owncloud. You have to finish the setup by visiting that site. Before that, we are going to reboot the Raspberry." 20 60    
+  dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "If everything went right, Owncloud should now be available at the URL https://$myipaddress/owncloud. You have to finish the setup by visiting that site. Before that, we are going to reboot the Raspberry." 20 60    
     
-    reboot
+  reboot
 }
 
 function main_update()
