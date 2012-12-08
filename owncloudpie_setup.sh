@@ -111,7 +111,7 @@ server {
   client_max_body_size 1000M; # set maximum upload size
 
   # deny direct access
-  location ~ ^/(data|config|\.ht|db_structure\.xml|README) {
+  location ~ ^/owncloud/(data|config|\.ht|db_structure\.xml|README) {
     deny all;
   }
 
