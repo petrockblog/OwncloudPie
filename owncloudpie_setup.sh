@@ -165,7 +165,7 @@ function main_newinstall_nginx()
 
 	# install all needed packages, e.g., Apache, PHP, SQLite
   apt-get remove -y apache2
-	apt-get install -y nginx openssl ssl-cert php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core
+	apt-get install -y nginx sendmail openssl ssl-cert php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core
 	apt-get install -y autoconf automake autotools-dev curl libapr1 libtool curl libcurl4-openssl-dev php-xml-parser php5 php5-dev php5-gd php5-fpm
 
 	# perform firmware update with 240 MB RAM, and 16 MB video
@@ -229,7 +229,7 @@ function main_newinstall_apache()
   usermod -a -G www-data www-data
 
   # install all needed packages, e.g., Apache, PHP, SQLite
-  apt-get install -y apache2 openssl ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core ca-certificates
+  apt-get install -y apache2 openssl sendmail ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core ca-certificates
 
   # perform firmware update with 240 MB RAM, and 16 MB video
   wget http://goo.gl/1BOfJ -O /usr/bin/rpi-update && chmod +x /usr/bin/rpi-update
