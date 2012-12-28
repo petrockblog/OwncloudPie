@@ -315,7 +315,7 @@ if [ $(id -u) -ne 0 ]; then
 fi
 
 while true; do
-    cmd=(dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --menu "Choose task." 22 76 16)
+    cmd=(dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --menu "You MUST set the server URL (e.g., 192.168.0.10 or myaddress.dyndns.org) before starting one of the installation routines. Choose task:" 22 76 16)
     options=(1 "Set server URL ($__servername)"
              2 "New installation, NGiNX based"
              3 "New installation, Apache based"
