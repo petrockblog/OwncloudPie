@@ -197,8 +197,8 @@ function main_newinstall_nginx()
 
 	# set ARM frequency to 800 MHz (or use the raspi-config tool to set clock speed)
   ensureKeyValueShort "arm_freq" "800" "/boot/config.txt"
-  ensureKeyValueShort "sdram_freq" "450" "/boot/config.txt"
-  ensureKeyValueShort "core_freq" "350" "/boot/config.txt"
+  ensureKeyValueShort "sdram_freq" "400" "/boot/config.txt"
+  ensureKeyValueShort "core_freq" "250" "/boot/config.txt"
 
 	# resize swap file to 512 MB
   ensureKeyValueShort "CONF_SWAPSIZE" "512" "/etc/dphys-swapfile"
