@@ -147,6 +147,11 @@ function main_setservername()
     choices=$("${cmd[@]}" 2>&1 >/dev/tty)    
     if [ "$choices" != "" ]; then
         __servername=$choices
+
+        if [[ -f /etc/nginx/sites-available/default ]]; then
+          sed /etc/nginx/sites-available/default -i -r -e "s|server_name [a-zA-Z.]+|server_name $__servername|g"
+        fi
+
     else
         break
     fi  
@@ -304,11 +309,30 @@ function main_update()
     dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "Finished upgrading Owncloud instance." 20 60    
 }
 
+function main_updatescript()
+{
+  scriptdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+  pushd $scriptdir
+  if [[ ! -d .git ]]; then
+    dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "Cannot find direcotry '.git'. Please clone the OwncloudPie script via 'git clone git://github.com/petrockblog/OwncloudPie.git'" 20 60    
+    popd
+    return
+  fi
+  git pull
+  popd
+  dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "Fetched the latest version of the OwncloudPie script. You need to restart the script." 20 60    
+}
+
 # here starts the main script
 
 checkNeededPackages
 
-__servername="url.ofmyserver.com"
+if [[ -f /etc/nginx/sites-available/default ]]; then
+  __servername=$(egrep -m 1 "server_name " /etc/nginx/sites-available/default | sed "s| ||g")
+  __servername=${__servername:11:0-1}
+else
+  __servername="url.ofmyserver.com"
+fi
 
 if [ $(id -u) -ne 0 ]; then
   printf "Script must be run as root. Try 'sudo ./OwncloudPie_setup'\n"
@@ -320,7 +344,8 @@ while true; do
     options=(1 "Set server URL ($__servername)"
              2 "New installation, NGiNX based"
              3 "New installation, Apache based"
-             4 "Update existing Owncloud installation")
+             4 "Update existing Owncloud installation"
+             5 "Update OwncloudPie script")
     choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)    
     if [ "$choice" != "" ]; then
         case $choice in
@@ -328,6 +353,7 @@ while true; do
             2) main_newinstall_nginx ;;
             3) main_newinstall_apache ;;
             4) main_update ;;
+            5) main_updatescript ;;
         esac
     else
         break
