@@ -174,9 +174,7 @@ function main_newinstall_nginx()
 	apt-get install -y nginx sendmail openssl ssl-cert php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core
 	apt-get install -y autoconf automake autotools-dev curl libapr1 libtool curl libcurl4-openssl-dev php-xml-parser php5 php5-dev php5-gd php5-fpm
 
-	# perform firmware update with 240 MB RAM, and 16 MB video
-  wget http://goo.gl/1BOfJ -O /usr/bin/rpi-update && chmod +x /usr/bin/rpi-update
-  rpi-update
+	# set memory split to 240 MB RAM and 16 MB video
   ensureKeyValueShort "gpu_mem" "16" "/boot/config.txt"
 
 	# generate self-signed certificate that is valid for one year
