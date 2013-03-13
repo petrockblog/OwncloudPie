@@ -237,9 +237,7 @@ function main_newinstall_apache()
   # install all needed packages, e.g., Apache, PHP, SQLite
   apt-get install -y apache2 openssl sendmail ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core ca-certificates
 
-  # perform firmware update with 240 MB RAM, and 16 MB video
-  wget http://goo.gl/1BOfJ -O /usr/bin/rpi-update && chmod +x /usr/bin/rpi-update
-  rpi-update
+  # Change RAM settings 16 MB video RAM
   ensureKeyValueShort "gpu_mem" "16" "/boot/config.txt"
 
   # generate self-signed certificate that is valid for one year
