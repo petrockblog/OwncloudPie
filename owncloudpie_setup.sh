@@ -109,6 +109,7 @@ server {
   root /var/www;
   index index.php;
   client_max_body_size 1000M; # set maximum upload size
+  fastcgi_buffers 64 4K;
 
   # deny direct access
   location ~ ^/owncloud/(data|config|\.ht|db_structure\.xml|README) {
@@ -117,7 +118,7 @@ server {
 
   # default try order
   location / {
-    try_files \$uri \$uri/ @webdav;
+    try_files \$uri \$uri/ index.php;
   }
 
   # owncloud WebDAV
@@ -130,14 +131,14 @@ server {
   }
 
   # enable php
-  location ~ \.php$ {
-    try_files \$uri =404;
-    fastcgi_pass 127.0.0.1:9000;
-    fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
-    fastcgi_param HTTPS on;
+  location ~ ^(?<script_name>.+?\.php)(?<path_info>/.*)?$ {
+    try_files \$script_name = 404;
     include fastcgi_params;
+    fastcgi_param PATH_INFO \$path_info;
+    fastcgi_param HTTPS on;
+    fastcgi_pass 127.0.0.1:9000;
   }
-}
+}    
 _EOF_
 }
 
