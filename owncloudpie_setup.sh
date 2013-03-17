@@ -174,7 +174,7 @@ function main_newinstall_nginx()
   apt-get remove -y apache2
   apt-get install -y nginx sendmail sendmail-bin openssl ssl-cert php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core
   apt-get install -y autoconf automake autotools-dev curl libapr1 libtool curl libcurl4-openssl-dev php-xml-parser php5 php5-dev php5-gd php5-fpm
-  apt-get install -y apt-get install memcached php5-memcache varnish dphys-swapfile
+  apt-get install memcached php5-memcache varnish dphys-swapfile
   apt-get autoremove -y
 
 	# set memory split to 240 MB RAM and 16 MB video
