@@ -218,6 +218,9 @@ function main_newinstall_nginx()
 	# change group and owner of all /var/www files recursively to www-data
 	chown -R www-data:www-data /var/www
 
+  # enable US UTF-8 locale
+  sudo sed -i -e "s/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/g" /etc/locale.gen
+
 	# finish the script
 	myipaddress=$(hostname -I | tr -d ' ')
   dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "If everything went right, Owncloud should now be available at the URL https://$myipaddress/owncloud. You have to finish the setup by visiting that site." 20 60    
@@ -289,6 +292,9 @@ function main_newinstall_apache()
 
   # restart Apache service
   /etc/init.d/apache2 reload
+
+  # enable US UTF-8 locale
+  sudo sed -i -e "s/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/g" /etc/locale.gen
 
   # finish the script
   myipaddress=$(hostname -I | tr -d ' ')
