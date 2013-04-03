@@ -184,6 +184,7 @@ function main_newinstall_nginx()
   ensureKeyValue "upload_max_filesize" "1000M" "/etc/php5/fpm/php.ini"
   ensureKeyValue "upload_tmp_dir" "/srv/http/owncloud/data" "/etc/php5/fpm/php.ini"
   mkdir -p /srv/http/owncloud/data
+  chown www-data:www-data /srv/http/owncloud/data
 
   sed /etc/nginx/sites-available/default -i -e "s|client_max_body_size [0-9]*[M]?;|client_max_body_size 1000M;|g"
 
