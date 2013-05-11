@@ -137,6 +137,7 @@ server {
     fastcgi_param PATH_INFO \$path_info;
     fastcgi_param HTTPS on;
     fastcgi_pass 127.0.0.1:9000;
+    fastcgi_read_timeout 900s; # 15 minutes
   }
 }    
 _EOF_
