@@ -159,6 +159,14 @@ function main_setservername()
     fi  
 }
 
+function installCertificateNginx()
+{
+  dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "We are now going to create a self-signed certificate. While you could simply press ENTER when you are asked for country name etc. or enter whatever you want, it might be beneficial to have the web servers host name in the common name field of the certificate." 20 60    
+  openssl req $@ -new -x509 -days 365 -nodes -out /etc/nginx/cert.pem -keyout /etc/nginx/cert.key
+  chmod 600 /etc/nginx/cert.pem
+  chmod 600 /etc/nginx/cert.key  
+}
+
 function main_newinstall_nginx()
 {
 	clear 
@@ -182,11 +190,7 @@ function main_newinstall_nginx()
   ensureKeyValueShort "gpu_mem" "16" "/boot/config.txt"
 
 	# generate self-signed certificate that is valid for one year
-  dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "We are now going to create a self-signed certificate. While you could simply press ENTER when you are asked for country name etc. or enter whatever you want, it might be beneficial to have the web servers host name in the common name field of the certificate." 20 60    
-
-	openssl req $@ -new -x509 -days 365 -nodes -out /etc/nginx/cert.pem -keyout /etc/nginx/cert.key
-	chmod 600 /etc/nginx/cert.pem
-	chmod 600 /etc/nginx/cert.key
+  installCertificateNginx
 
 	writeServerConfig
 	sed /etc/php5/fpm/pool.d/www.conf -i -e "s|listen = /var/run/php5-fpm.sock|listen = 127.0.0.1:9000|g"
@@ -228,6 +232,14 @@ function main_newinstall_nginx()
   dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "If everything went right, Owncloud should now be available at the URL https://$myipaddress/owncloud. You have to finish the setup by visiting that site." 20 60    
 }
 
+function installCertificateApache()
+{  
+  dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "We are now going to create a self-signed certificate. While you could simply press ENTER when you are asked for country name etc. or enter whatever you want, it might be beneficial to have the web servers host name in the common name field of the certificate." 20 60    
+  clear
+  openssl req $@ -new -x509 -days 365 -nodes -out /etc/apache2/apache.pem -keyout /etc/apache2/apache.pem
+  chmod 600 /etc/apache2/apache.pem
+}
+
 function main_newinstall_apache()
 {
   clear 
@@ -247,10 +259,7 @@ function main_newinstall_apache()
   ensureKeyValueShort "gpu_mem" "16" "/boot/config.txt"
 
   # generate self-signed certificate that is valid for one year
-  dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "We are now going to create a self-signed certificate. While you could simply press ENTER when you are asked for country name etc. or enter whatever you want, it might be beneficial to have the web servers host name in the common name field of the certificate." 20 60    
-  clear
-  openssl req $@ -new -x509 -days 365 -nodes -out /etc/apache2/apache.pem -keyout /etc/apache2/apache.pem
-  chmod 600 /etc/apache2/apache.pem
+  installCertificateApache
 
   # enable Apache modules (as explained at http://owncloud.org/support/install/, Section 2.3)
   a2enmod ssl
@@ -350,17 +359,21 @@ while true; do
     cmd=(dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --menu "You MUST set the server URL (e.g., 192.168.0.10 or myaddress.dyndns.org) before starting one of the installation routines. Choose task:" 22 76 16)
     options=(1 "Set server URL ($__servername)"
              2 "New installation, NGiNX based"
-             3 "New installation, Apache based"
-             4 "Update existing Owncloud installation"
-             5 "Update OwncloudPie script")
+             3 "Generate new SSL certificate for NGinX"
+             4 "New installation, Apache based"
+             5 "Generate new SSL certificate for Apache"
+             6 "Update existing Owncloud installation"
+             7 "Update OwncloudPie script")
     choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)    
     if [ "$choice" != "" ]; then
         case $choice in
             1) main_setservername ;;
             2) main_newinstall_nginx ;;
-            3) main_newinstall_apache ;;
-            4) main_update ;;
-            5) main_updatescript ;;
+            3) installCertificateNginx ;;
+            4) main_newinstall_apache ;;
+            5) installCertificateApache ;;
+            6) main_update ;;
+            7) main_updatescript ;;
         esac
     else
         break
