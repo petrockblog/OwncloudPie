@@ -74,19 +74,24 @@ function downloadLatestOwncloudRelease()
 	clear
 	
 	if [[ ! -d /var/www/owncloud ]]; then
-		echo "Cannot find directory /var/www/owncloud. "
-		exit 1
+    mkdir -p /var/www/owncloud
+    chown -R www-data:www-data /var/www
 	fi
 
 	printMsg "Updating to latest Owncloud release."
 
-	# download and extract the latest release of Owncloud (4.5.2 at this time)
+	# download and extract the latest release of Owncloud
 	wget http://owncloud.org/releases/Changelog
 	latestrelease=$(cat Changelog | grep Download | head -n 1)
 	latestrelease=${latestrelease:10}
 	wget "$latestrelease"
-	tar -xjf "$(basename $latestrelease)"
-	rm "$(basename $latestrelease)"
+  if [[ $? -gt 0 ]]; then
+    latestrelease=$(cat Changelog | grep Download | head -n 2 | tail -n 1)
+    latestrelease=${latestrelease:10}
+    wget "$latestrelease"
+  fi
+  tar -xjfv "$(basename $latestrelease)"
+  rm "$(basename $latestrelease)"
 	rm Changelog
 }
 
@@ -359,7 +364,7 @@ while true; do
     cmd=(dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --menu "You MUST set the server URL (e.g., 192.168.0.10 or myaddress.dyndns.org) before starting one of the installation routines. Choose task:" 22 76 16)
     options=(1 "Set server URL ($__servername)"
              2 "New installation, NGiNX based"
-             3 "Generate new SSL certificate for NGinX"
+             3 "Generate new SSL certificate for NGiNX"
              4 "New installation, Apache based"
              5 "Generate new SSL certificate for Apache"
              6 "Update existing Owncloud installation"
