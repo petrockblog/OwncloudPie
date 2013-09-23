@@ -180,6 +180,8 @@ function main_newinstall_nginx()
 	apt-get update
 	apt-get upgrade -y
 
+  locale-gen en_US.UTF-8
+
 	# make sure that the group www-data exists
 	groupadd www-data
 	usermod -a -G www-data www-data
@@ -252,6 +254,8 @@ function main_newinstall_apache()
   # make sure we use the newest packages
   apt-get update
   apt-get upgrade -y
+
+  locale-gen en_US.UTF-8
 
   # make sure that the group www-data exists
   groupadd www-data
