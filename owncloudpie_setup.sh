@@ -361,6 +361,7 @@ function main_uninstall()
                       autoconf automake autotools-dev curl libapr1 libtool curl libcurl4-openssl-dev \
                       php-xml-parser php5 php5-dev php5-gd php5-fpm memcached php5-memcache varnish dphys-swapfile bzip2
     apt-get -y autoremove 
+    ;;
    *)
     ;;
   esac      
