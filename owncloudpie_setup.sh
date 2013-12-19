@@ -156,7 +156,7 @@ function main_setservername()
         __servername=$choices
 
         if [[ -f /etc/nginx/sites-available/default ]]; then
-          sed /etc/nginx/sites-available/default -i -r -e "s|server_name [a-zA-Z.-]+|server_name $__servername|g"
+          sed /etc/nginx/sites-available/default -r -e "s|server_name .*|server_name $__servername;|g"
         fi
 
     else
