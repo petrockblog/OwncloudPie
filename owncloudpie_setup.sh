@@ -153,10 +153,10 @@ function main_setservername()
     cmd=(dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --inputbox "Please enter the URL of your Owncloud server." 22 76 $__servername)
     choices=$("${cmd[@]}" 2>&1 >/dev/tty)    
     if [ "$choices" != "" ]; then
-        __newservername=$choices
+        __servername=$choices
 
         if [[ -f /etc/nginx/sites-available/default ]]; then
-          sed /etc/nginx/sites-available/default -i -r -e "s|server_name [a-zA-Z.-]+|server_name $__newservername|g"
+          sed /etc/nginx/sites-available/default -i -r -e "s|server_name [a-zA-Z.-]+|server_name $__servername|g"
         fi
 
     else
