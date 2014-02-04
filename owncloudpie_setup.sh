@@ -244,8 +244,9 @@ function installCertificateApache()
 {  
   dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "We are now going to create a self-signed certificate. While you could simply press ENTER when you are asked for country name etc. or enter whatever you want, it might be beneficial to have the web servers host name in the common name field of the certificate." 20 60    
   clear
-  openssl req $@ -new -x509 -days 365 -nodes -out /etc/apache2/apache.pem -keyout /etc/apache2/apache.pem
+  openssl req $@ -new -x509 -days 365 -nodes -out /etc/apache2/apache.pem -keyout /etc/apache2/apache.key
   chmod 600 /etc/apache2/apache.pem
+  chmod 600 /etc/apache2/apache.key
 }
 
 function main_newinstall_apache()
@@ -282,7 +283,7 @@ function main_newinstall_apache()
 
   # configure Apache to use self-signed certificate
   mv /etc/apache2/sites-available/default-ssl /etc/apache2/sites-available/default-ssl.bak
-  sed 's|/etc/ssl/certs/ssl-cert-snakeoil.pem|/etc/apache2/apache.pem|g;s|AllowOverride None|AllowOverride All|g;s|SSLCertificateKeyFile|# SSLCertificateKeyFile|g' /etc/apache2/sites-available/default-ssl.bak > tmp
+  sed 's|/etc/ssl/certs/ssl-cert-snakeoil.pem|/etc/apache2/apache.pem|g;s|AllowOverride None|AllowOverride All|g;s|SSLCertificateKeyFile|SSLCertificateKeyFile /etc/apache2/apache.key|g' /etc/apache2/sites-available/default-ssl.bak > tmp
   mv tmp /etc/apache2/sites-available/default-ssl
 
   # limit number of parallel Apache processes
