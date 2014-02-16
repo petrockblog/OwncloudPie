@@ -283,7 +283,9 @@ function main_newinstall_apache()
 
   # configure Apache to use self-signed certificate
   mv /etc/apache2/sites-available/default-ssl /etc/apache2/sites-available/default-ssl.bak
-  sed 's|/etc/ssl/certs/ssl-cert-snakeoil.pem|/etc/apache2/apache.pem|g;s|AllowOverride None|AllowOverride All|g;s|SSLCertificateKeyFile|SSLCertificateKeyFile /etc/apache2/apache.key|g' /etc/apache2/sites-available/default-ssl.bak > tmp
+  sed 's|/etc/ssl/certs/ssl-cert-snakeoil.pem|/etc/apache2/apache.pem|g' /etc/apache2/sites-available/default-ssl.bak > tmp
+  sed -i 's|AllowOverride None|AllowOverride All|g' tmp
+  sed -i 's|/etc/ssl/private/ssl-cert-snakeoil.key|/etc/apache2/apache.key|g' tmp
   mv tmp /etc/apache2/sites-available/default-ssl
 
   # limit number of parallel Apache processes
