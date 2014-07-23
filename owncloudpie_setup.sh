@@ -81,13 +81,11 @@ function downloadLatestOwncloudRelease()
 	printMsg "Updating to latest Owncloud release."
 
 	# download and extract the latest release of Owncloud
-	wget http://owncloud.org/releases/Changelog
-	latestrelease=$(cat Changelog | grep Download | head -n 1)
-	latestrelease=${latestrelease:10}
+  wget -O changelog http://owncloud.org/changelog/
+	latestrelease=$(cat changelog | grep "Download:" | head -n 1 | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//')
 	wget "$latestrelease"
   if [[ $? -gt 0 ]]; then
-    latestrelease=$(cat Changelog | grep Download | head -n 2 | tail -n 1)
-    latestrelease=${latestrelease:10}
+    latestrelease=$(cat changelog | grep "Download:" | head -n 2 | tail -n 1 | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//')
     wget "$latestrelease"
   fi
   tar -xjf "$(basename $latestrelease)"
