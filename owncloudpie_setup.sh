@@ -90,7 +90,7 @@ function downloadLatestOwncloudRelease()
   fi
   tar -xjf "$(basename $latestrelease)"
   rm "$(basename $latestrelease)"
-	rm Changelog
+	rm changelog
 }
 
 function writeServerConfig()
