@@ -184,8 +184,7 @@ function main_newinstall_nginx()
 	groupadd www-data
 	usermod -a -G www-data www-data
 
-	# install all needed packages, e.g., Apache, PHP, SQLite
-  apt-get remove -y apache2
+	# install all needed packages, e.g., Nginx, PHP, SQLite
   apt-get install -y nginx sendmail sendmail-bin openssl ssl-cert php5-cli php5-sqlite php5-gd php5-curl \
                       php5-common php5-cgi sqlite php-pear php-apc git-core \
                       autoconf automake autotools-dev curl libapr1 libtool curl libcurl4-openssl-dev \
