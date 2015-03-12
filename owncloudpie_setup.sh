@@ -202,6 +202,7 @@ function main_newinstall_nginx()
 
   ensureKeyValue "upload_max_filesize" "1000M" "/etc/php5/fpm/php.ini"
   ensureKeyValue "post_max_size" "1000M" "/etc/php5/fpm/php.ini"
+  ensureKeyValue "default_charset" "UTF-8" "/etc/php5/fpm/php.ini"
 
   ensureKeyValue "upload_tmp_dir" "/srv/http/owncloud/data" "/etc/php5/fpm/php.ini"
   mkdir -p /srv/http/owncloud/data
