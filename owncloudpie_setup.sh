@@ -73,8 +73,8 @@ function downloadLatestOwncloudRelease()
 {
 	clear
 	
-	if [[ ! -d /var/www/owncloud ]]; then
-    mkdir -p /var/www/owncloud
+	if [[ ! -d /var/www/html/owncloud ]]; then
+    mkdir -p /var/www/html/owncloud
     chown -R www-data:www-data /var/www
 	fi
 
@@ -223,9 +223,9 @@ function main_newinstall_nginx()
 	dphys-swapfile setup
 	dphys-swapfile swapon
 
-  mkdir -p /var/www/owncloud
+  mkdir -p /var/www/html/owncloud
   downloadLatestOwncloudRelease
-	mv owncloud/ /var/www/
+	mv owncloud/ /var/www/html/
 
 	# change group and owner of all /var/www files recursively to www-data
 	chown -R www-data:www-data /var/www
@@ -304,9 +304,9 @@ function main_newinstall_apache()
   # enable SSL site
   a2ensite default-ssl
 
-  mkdir -p /var/www/owncloud
+  mkdir -p /var/www/html/owncloud
   downloadLatestOwncloudRelease
-  cp -r owncloud/* /var/www/owncloud/
+  cp -r owncloud/* /var/www/html/owncloud/
   rm -rf owncloud
 
   # change group and owner of all /var/www files recursively to www-data
@@ -328,7 +328,7 @@ function main_newinstall_apache()
 function main_update()
 {
 	downloadLatestOwncloudRelease
-	cp -r owncloud/* /var/www/owncloud/
+	cp -r owncloud/* /var/www/html/owncloud/
 	rm -rf owncloud
 
   chown -R www-data:www-data /var/www
