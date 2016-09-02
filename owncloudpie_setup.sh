@@ -113,6 +113,7 @@ server {
   index index.php;
   client_max_body_size 4000M; # set maximum upload size
   fastcgi_buffers 64 4K;
+  add_header Strict-Transport-Security \"max-age=15552000; includeSubDomains\";
 
   # deny direct access
   location ~ ^/owncloud/(data|config|\.ht|db_structure\.xml|README) {
@@ -200,6 +201,8 @@ function main_newinstall_nginx()
 
 	writeServerConfig
 	sed /etc/php5/fpm/pool.d/www.conf -i -e "s|listen = /var/run/php5-fpm.sock|listen = 127.0.0.1:9000|g"
+	sed /etc/php5/fpm/pool.d/www.conf -i -e "s|\;env\[PATH\]|env\[PATH\]|g"
+
 
   ensureKeyValue "upload_max_filesize" "2000M" "/etc/php5/fpm/php.ini"
   ensureKeyValue "post_max_size" "2000M" "/etc/php5/fpm/php.ini"
