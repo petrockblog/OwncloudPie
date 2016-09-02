@@ -326,11 +326,31 @@ function main_newinstall_apache()
   reboot
 }
 
+function mount_external()
+{  
+    apt-get install -y ntfs-3g
+    apt-get autoremove -y
+	
+    mkdir /media/owncloud
+    
+    cat /etc/fstab > temp_stab
+	uuid=$(blkid /dev/sda1 | grep -Po 'UUID="\K.*?(?=")')
+	uid=$(id -u www-data)
+	gid=$(id -g www-data)
+	echo "UUID=$uuid /media/owncloud auto nofail,uid=$uid,gid=$gid,umask=0027,dmask=0027,noatime 0 0" >> temp_stab
+    mv temp_stab /etc/fstab
+	
+	dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "If everything went right, drive in /dev/sda1 is mounted to /media/owncloud. " 20 60    
+	
+	reboot
+    
+}
+
 function main_update()
 {
-	downloadLatestOwncloudRelease
-	cp -r owncloud/* /var/www/html/owncloud/
-	rm -rf owncloud
+    downloadLatestOwncloudRelease
+    cp -r owncloud/* /var/www/html/owncloud/
+    rm -rf owncloud
 
   chown -R www-data:www-data /var/www
 
@@ -361,7 +381,7 @@ function main_uninstall()
     apt-get remove -y nginx sendmail sendmail-bin openssl ssl-cert php5-cli php5-sqlite php5-gd php5-curl \
                       apache2 php5-common php5-cgi sqlite php-pear php-apc git-core \
                       autoconf automake autotools-dev curl libapr1 libtool curl libcurl4-openssl-dev \
-                      php-xml-parser php5 php5-dev php5-gd php5-fpm memcached php5-memcache varnish dphys-swapfile bzip2
+                      php-xml-parser php5 php5-dev php5-gd php5-fpm php5-mysql memcached php5-memcache varnish dphys-swapfile bzip2 mariadb-server ntfs-3g
     apt-get -y autoremove 
     ;;
    *)
@@ -392,9 +412,10 @@ while true; do
              3 "Generate new SSL certificate for NGiNX"
              4 "New installation, Apache based"
              5 "Generate new SSL certificate for Apache"
-             6 "Update existing Owncloud installation"
-             7 "Update OwncloudPie script"
-             8 "Uninstall OwncloudPie")
+             6 "Mount external drive (in /dev/sda1)"
+             7 "Update existing Owncloud installation"
+             8 "Update OwncloudPie script"
+             9 "Uninstall OwncloudPie")
     choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)    
     if [ "$choice" != "" ]; then
         case $choice in
@@ -403,9 +424,10 @@ while true; do
             3) installCertificateNginx ;;
             4) main_newinstall_apache ;;
             5) installCertificateApache ;;
-            6) main_update ;;
-            7) main_updatescript ;;
-            8) main_uninstall ;;
+            6) mount_external ;;
+            7) main_update ;;
+            8) main_updatescript ;;
+            9) main_uninstall ;;
         esac
     else
         break
