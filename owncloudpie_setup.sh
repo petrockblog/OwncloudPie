@@ -201,15 +201,15 @@ function main_newinstall_nginx()
 	writeServerConfig
 	sed /etc/php5/fpm/pool.d/www.conf -i -e "s|listen = /var/run/php5-fpm.sock|listen = 127.0.0.1:9000|g"
 
-  ensureKeyValue "upload_max_filesize" "1000M" "/etc/php5/fpm/php.ini"
-  ensureKeyValue "post_max_size" "1000M" "/etc/php5/fpm/php.ini"
+  ensureKeyValue "upload_max_filesize" "2000M" "/etc/php5/fpm/php.ini"
+  ensureKeyValue "post_max_size" "2000M" "/etc/php5/fpm/php.ini"
   ensureKeyValue "default_charset" "UTF-8" "/etc/php5/fpm/php.ini"
 
   ensureKeyValue "upload_tmp_dir" "/srv/http/owncloud/data" "/etc/php5/fpm/php.ini"
   mkdir -p /srv/http/owncloud/data
   chown www-data:www-data /srv/http/owncloud/data
 
-  sed /etc/nginx/sites-available/default -i -e "s|client_max_body_size [0-9]*[M]?;|client_max_body_size 1000M;|g"
+  sed /etc/nginx/sites-available/default -i -e "s|client_max_body_size [0-9]*[M]?;|client_max_body_size 2000M;|g"
 
 	/etc/init.d/php5-fpm restart
 	/etc/init.d/nginx restart
