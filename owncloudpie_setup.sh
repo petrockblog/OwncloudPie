@@ -109,7 +109,7 @@ server {
   server_name $__servername;
   ssl_certificate /etc/nginx/cert.pem;
   ssl_certificate_key /etc/nginx/cert.key;
-  root /var/www;
+  root /var/www/html;
   index index.php;
   client_max_body_size 4000M; # set maximum upload size
   fastcgi_buffers 64 4K;
@@ -141,6 +141,7 @@ server {
     fastcgi_param HTTPS on;
     fastcgi_pass 127.0.0.1:9000;
     fastcgi_read_timeout 900s; # 15 minutes
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
   }
 }    
 _EOF_
@@ -184,11 +185,11 @@ function main_newinstall_nginx()
 	groupadd www-data
 	usermod -a -G www-data www-data
 
-	# install all needed packages, e.g., Nginx, PHP, SQLite
+	# install all needed packages, e.g., Nginx, PHP, SQLite, MariaDB 
   apt-get install -y nginx sendmail sendmail-bin openssl ssl-cert php5-cli php5-sqlite php5-gd php5-curl \
                       php5-common php5-cgi sqlite php-pear php-apc git-core \
                       autoconf automake autotools-dev curl libapr1 libtool curl libcurl4-openssl-dev \
-                      php-xml-parser php5 php5-dev php5-gd php5-fpm memcached php5-memcache varnish dphys-swapfile bzip2
+                      php-xml-parser php5 php5-dev php5-gd php5-fpm php5-mysql memcached php5-memcache varnish dphys-swapfile bzip2 mariadb-server
   apt-get autoremove -y
 
 	# set memory split to 240 MB RAM and 16 MB video
@@ -262,7 +263,7 @@ function main_newinstall_apache()
   usermod -a -G www-data www-data
 
   # install all needed packages, e.g., Apache, PHP, SQLite
-  apt-get install -y apache2 openssl sendmail sendmail-bin ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core ca-certificates dphys-swapfile bzip2
+  apt-get install -y apache2 openssl sendmail sendmail-bin ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-mysql php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core ca-certificates dphys-swapfile bzip2 mariadb-server
 
   # Change RAM settings 16 MB video RAM
   ensureKeyValueShort "gpu_mem" "16" "/boot/config.txt"
