@@ -326,23 +326,52 @@ function main_newinstall_apache()
   reboot
 }
 
+function create_db()
+{
+    __rootpass="root"
+    __dbuser="ocuser"
+    __dbpass="ocpass"
+	
+	cmd=(dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --inputbox "Please enter the password of the root db user you selected earlier" 22 76 $__rootpass)
+    choices=$("${cmd[@]}" 2>&1 >/dev/tty)    
+    if [ "$choices" != "" ]; then
+        __rootpass=$choices
+    fi
+	
+    cmd=(dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --inputbox "Please enter the username of the Owncloud db user." 22 76 $__dbuser)
+    choices=$("${cmd[@]}" 2>&1 >/dev/tty)    
+    if [ "$choices" != "" ]; then
+        __dbuser=$choices
+    fi
+	
+	cmd=(dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --inputbox "Please enter the password of the Owncloud db user." 22 76 $__dbpass)
+    choices=$("${cmd[@]}" 2>&1 >/dev/tty)    
+    if [ "$choices" != "" ]; then
+        __dbpass=$choices
+    fi
+    
+    mysql -u root -p"$__rootpass" -e "DROP DATABASE ocdb;"
+    mysql -u root -p"$__rootpass" -e "CREATE DATABASE ocdb CHARACTER SET utf8 COLLATE utf8_general_ci;"
+    mysql -u root -p"$__rootpass" -e "GRANT ALL PRIVILEGES ON ocdb.* TO $__dbuser@localhost IDENTIFIED BY '$__dbpass';"
+    mysql -u root -p"$__rootpass" -e "FLUSH PRIVILEGES;"
+}
 function mount_external()
 {  
     apt-get install -y ntfs-3g
     apt-get autoremove -y
-	
+    
     mkdir /media/owncloud
     
     cat /etc/fstab > temp_stab
-	uuid=$(blkid /dev/sda1 | grep -Po 'UUID="\K.*?(?=")')
-	uid=$(id -u www-data)
-	gid=$(id -g www-data)
-	echo "UUID=$uuid /media/owncloud auto nofail,uid=$uid,gid=$gid,umask=0027,dmask=0027,noatime 0 0" >> temp_stab
+    uuid=$(blkid /dev/sda1 | grep -Po 'UUID="\K.*?(?=")')
+    uid=$(id -u www-data)
+    gid=$(id -g www-data)
+    echo "UUID=$uuid /media/owncloud auto nofail,uid=$uid,gid=$gid,umask=0027,dmask=0027,noatime 0 0" >> temp_stab
     mv temp_stab /etc/fstab
-	
-	dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "If everything went right, drive in /dev/sda1 is mounted to /media/owncloud. " 20 60    
-	
-	reboot
+    
+    dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "If everything went right, drive in /dev/sda1 is mounted to /media/owncloud. For the changes to be applied, we are going to reboot the Raspberry." 20 60    
+    
+    reboot
     
 }
 
@@ -413,9 +442,10 @@ while true; do
              4 "New installation, Apache based"
              5 "Generate new SSL certificate for Apache"
              6 "Mount external drive (in /dev/sda1)"
-             7 "Update existing Owncloud installation"
-             8 "Update OwncloudPie script"
-             9 "Uninstall OwncloudPie")
+             7 "Create MySQL database for OwnCloud"
+             8 "Update existing Owncloud installation"
+             9 "Update OwncloudPie script"
+             10 "Uninstall OwncloudPie")
     choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)    
     if [ "$choice" != "" ]; then
         case $choice in
@@ -425,9 +455,10 @@ while true; do
             4) main_newinstall_apache ;;
             5) installCertificateApache ;;
             6) mount_external ;;
-            7) main_update ;;
-            8) main_updatescript ;;
-            9) main_uninstall ;;
+            7) create_db ;;
+            8) main_update ;;
+            9) main_updatescript ;;
+            10) main_uninstall ;;
         esac
     else
         break
