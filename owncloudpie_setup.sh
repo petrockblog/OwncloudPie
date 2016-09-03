@@ -113,7 +113,7 @@ server {
   index index.php;
   client_max_body_size 4000M; # set maximum upload size
   fastcgi_buffers 64 4K;
-  add_header Strict-Transport-Security \"max-age=15552000; includeSubDomains\";
+  add_header Strict-Transport-Security "max-age=15552000; includeSubDomains";
 
   # deny direct access
   location ~ ^/owncloud/(data|config|\.ht|db_structure\.xml|README) {
