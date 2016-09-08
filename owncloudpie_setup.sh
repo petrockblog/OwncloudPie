@@ -109,10 +109,11 @@ server {
   server_name $__servername;
   ssl_certificate /etc/nginx/cert.pem;
   ssl_certificate_key /etc/nginx/cert.key;
-  root /var/www;
+  root /var/www/html;
   index index.php;
   client_max_body_size 4000M; # set maximum upload size
   fastcgi_buffers 64 4K;
+  add_header Strict-Transport-Security "max-age=15552000; includeSubDomains";
 
   # deny direct access
   location ~ ^/owncloud/(data|config|\.ht|db_structure\.xml|README) {
@@ -141,6 +142,7 @@ server {
     fastcgi_param HTTPS on;
     fastcgi_pass 127.0.0.1:9000;
     fastcgi_read_timeout 900s; # 15 minutes
+    fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
   }
 }    
 _EOF_
@@ -184,11 +186,11 @@ function main_newinstall_nginx()
 	groupadd www-data
 	usermod -a -G www-data www-data
 
-	# install all needed packages, e.g., Nginx, PHP, SQLite
+	# install all needed packages, e.g., Nginx, PHP, SQLite, MariaDB 
   apt-get install -y nginx sendmail sendmail-bin openssl ssl-cert php5-cli php5-sqlite php5-gd php5-curl \
                       php5-common php5-cgi sqlite php-pear php-apc git-core \
                       autoconf automake autotools-dev curl libapr1 libtool curl libcurl4-openssl-dev \
-                      php-xml-parser php5 php5-dev php5-gd php5-fpm memcached php5-memcache varnish dphys-swapfile bzip2
+                      php-xml-parser php5 php5-dev php5-gd php5-fpm php5-mysql memcached php5-memcache varnish dphys-swapfile bzip2 mariadb-server
   apt-get autoremove -y
 
 	# set memory split to 240 MB RAM and 16 MB video
@@ -199,16 +201,18 @@ function main_newinstall_nginx()
 
 	writeServerConfig
 	sed /etc/php5/fpm/pool.d/www.conf -i -e "s|listen = /var/run/php5-fpm.sock|listen = 127.0.0.1:9000|g"
+	sed /etc/php5/fpm/pool.d/www.conf -i -e "s|\;env\[PATH\]|env\[PATH\]|g"
 
-  ensureKeyValue "upload_max_filesize" "1000M" "/etc/php5/fpm/php.ini"
-  ensureKeyValue "post_max_size" "1000M" "/etc/php5/fpm/php.ini"
+
+  ensureKeyValue "upload_max_filesize" "2000M" "/etc/php5/fpm/php.ini"
+  ensureKeyValue "post_max_size" "2000M" "/etc/php5/fpm/php.ini"
   ensureKeyValue "default_charset" "UTF-8" "/etc/php5/fpm/php.ini"
 
   ensureKeyValue "upload_tmp_dir" "/srv/http/owncloud/data" "/etc/php5/fpm/php.ini"
   mkdir -p /srv/http/owncloud/data
   chown www-data:www-data /srv/http/owncloud/data
 
-  sed /etc/nginx/sites-available/default -i -e "s|client_max_body_size [0-9]*[M]?;|client_max_body_size 1000M;|g"
+  sed /etc/nginx/sites-available/default -i -e "s|client_max_body_size [0-9]*[M]?;|client_max_body_size 2000M;|g"
 
 	/etc/init.d/php5-fpm restart
 	/etc/init.d/nginx restart
@@ -262,7 +266,7 @@ function main_newinstall_apache()
   usermod -a -G www-data www-data
 
   # install all needed packages, e.g., Apache, PHP, SQLite
-  apt-get install -y apache2 openssl sendmail sendmail-bin ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core ca-certificates dphys-swapfile bzip2
+  apt-get install -y apache2 openssl sendmail sendmail-bin ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-mysql php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core ca-certificates dphys-swapfile bzip2 mariadb-server
 
   # Change RAM settings 16 MB video RAM
   ensureKeyValueShort "gpu_mem" "16" "/boot/config.txt"
@@ -325,11 +329,60 @@ function main_newinstall_apache()
   reboot
 }
 
+function create_db()
+{
+    __rootpass="root"
+    __dbuser="ocuser"
+    __dbpass="ocpass"
+	
+	cmd=(dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --inputbox "Please enter the password of the root db user you selected earlier" 22 76 $__rootpass)
+    choices=$("${cmd[@]}" 2>&1 >/dev/tty)    
+    if [ "$choices" != "" ]; then
+        __rootpass=$choices
+    fi
+	
+    cmd=(dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --inputbox "Please enter the username of the Owncloud db user." 22 76 $__dbuser)
+    choices=$("${cmd[@]}" 2>&1 >/dev/tty)    
+    if [ "$choices" != "" ]; then
+        __dbuser=$choices
+    fi
+	
+	cmd=(dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --inputbox "Please enter the password of the Owncloud db user." 22 76 $__dbpass)
+    choices=$("${cmd[@]}" 2>&1 >/dev/tty)    
+    if [ "$choices" != "" ]; then
+        __dbpass=$choices
+    fi
+    
+    mysql -u root -p"$__rootpass" -e "DROP DATABASE ocdb;"
+    mysql -u root -p"$__rootpass" -e "CREATE DATABASE ocdb CHARACTER SET utf8 COLLATE utf8_general_ci;"
+    mysql -u root -p"$__rootpass" -e "GRANT ALL PRIVILEGES ON ocdb.* TO $__dbuser@localhost IDENTIFIED BY '$__dbpass';"
+    mysql -u root -p"$__rootpass" -e "FLUSH PRIVILEGES;"
+}
+function mount_external()
+{  
+    apt-get install -y ntfs-3g
+    apt-get autoremove -y
+    
+    mkdir /media/owncloud
+    
+    cat /etc/fstab > temp_stab
+    uuid=$(blkid /dev/sda1 | grep -Po 'UUID="\K.*?(?=")')
+    uid=$(id -u www-data)
+    gid=$(id -g www-data)
+    echo "UUID=$uuid /media/owncloud auto nofail,uid=$uid,gid=$gid,umask=0027,dmask=0027,noatime 0 0" >> temp_stab
+    mv temp_stab /etc/fstab
+    
+    dialog --backtitle "PetRockBlock.com - OwncloudPie Setup." --msgbox "If everything went right, drive in /dev/sda1 is mounted to /media/owncloud. For the changes to be applied, we are going to reboot the Raspberry." 20 60    
+    
+    reboot
+    
+}
+
 function main_update()
 {
-	downloadLatestOwncloudRelease
-	cp -r owncloud/* /var/www/html/owncloud/
-	rm -rf owncloud
+    downloadLatestOwncloudRelease
+    cp -r owncloud/* /var/www/html/owncloud/
+    rm -rf owncloud
 
   chown -R www-data:www-data /var/www
 
@@ -360,7 +413,7 @@ function main_uninstall()
     apt-get remove -y nginx sendmail sendmail-bin openssl ssl-cert php5-cli php5-sqlite php5-gd php5-curl \
                       apache2 php5-common php5-cgi sqlite php-pear php-apc git-core \
                       autoconf automake autotools-dev curl libapr1 libtool curl libcurl4-openssl-dev \
-                      php-xml-parser php5 php5-dev php5-gd php5-fpm memcached php5-memcache varnish dphys-swapfile bzip2
+                      php-xml-parser php5 php5-dev php5-gd php5-fpm php5-mysql memcached php5-memcache varnish dphys-swapfile bzip2 mariadb-server ntfs-3g
     apt-get -y autoremove 
     ;;
    *)
@@ -391,9 +444,11 @@ while true; do
              3 "Generate new SSL certificate for NGiNX"
              4 "New installation, Apache based"
              5 "Generate new SSL certificate for Apache"
-             6 "Update existing Owncloud installation"
-             7 "Update OwncloudPie script"
-             8 "Uninstall OwncloudPie")
+             6 "Mount external drive (in /dev/sda1)"
+             7 "Create MySQL database for OwnCloud"
+             8 "Update existing Owncloud installation"
+             9 "Update OwncloudPie script"
+             10 "Uninstall OwncloudPie")
     choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)    
     if [ "$choice" != "" ]; then
         case $choice in
@@ -402,9 +457,11 @@ while true; do
             3) installCertificateNginx ;;
             4) main_newinstall_apache ;;
             5) installCertificateApache ;;
-            6) main_update ;;
-            7) main_updatescript ;;
-            8) main_uninstall ;;
+            6) mount_external ;;
+            7) create_db ;;
+            8) main_update ;;
+            9) main_updatescript ;;
+            10) main_uninstall ;;
         esac
     else
         break
