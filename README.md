@@ -5,6 +5,14 @@ Shell script for installing and updating Owncloud on the Raspberry Pi. The scrip
 
 The script downloads and installs the latest Owncloud version that can be found in the file at http://owncloud.org/releases/Changelog. 
 
+## Quick Start
+
+If you don't want to enter multiple commands, just copy and paste the string below into your Terminal:
+
+```shell
+sudo apt-get update && sudo apt-get install -y git dialog && git clone git://github.com/petrockblog/OwncloudPie.git && cd OwncloudPie && chmod +x owncloudpie_setup.sh && chmod +x owncloudpie_setup.sh && sudo ./owncloudpie_setup.sh
+```
+
 ## Usage
 
 First of all, make sure that Git is installed:
