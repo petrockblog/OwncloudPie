@@ -187,10 +187,12 @@ function main_newinstall_nginx()
 	usermod -a -G www-data www-data
 
 	# install all needed packages, e.g., Nginx, PHP, SQLite, MariaDB 
-  apt-get install -y nginx sendmail sendmail-bin openssl ssl-cert php5-cli php5-sqlite php5-gd php5-curl \
-                      php5-common php5-cgi sqlite php-pear php-apc git-core \
+  apt-get install -y nginx sendmail sendmail-bin openssl ssl-cert php7.0-cli php7.0-sqlite3 php7.0-gd php7.0-curl \
+                      php7.0-common php7.0-cgi sqlite php-pear php-apcu git-core \
                       autoconf automake autotools-dev curl libapr1 libtool curl libcurl4-openssl-dev \
-                      php-xml-parser php5 php5-dev php5-gd php5-fpm php5-mysql memcached php5-memcache varnish dphys-swapfile bzip2 mariadb-server
+                      php7.0-xml php7.0 php7.0-dev php7.0-gd php7.0-fpm php7.0-mysql memcached php-memcache varnish dphys-swapfile bzip2 mariadb-server \
+                      php7.0-mbstring php7.0-zip redis-server php7.0-redis php7.0-intl
+#                      php-xml-parser php7.0 php7.0-dev php7.0-gd php7.0-fpm php7.0-mysql memcached php7.0-memcache varnish dphys-swapfile bzip2 mariadb-server
   apt-get autoremove -y
 
 	# set memory split to 240 MB RAM and 16 MB video
@@ -200,21 +202,23 @@ function main_newinstall_nginx()
   installCertificateNginx
 
 	writeServerConfig
-	sed /etc/php5/fpm/pool.d/www.conf -i -e "s|listen = /var/run/php5-fpm.sock|listen = 127.0.0.1:9000|g"
-	sed /etc/php5/fpm/pool.d/www.conf -i -e "s|\;env\[PATH\]|env\[PATH\]|g"
+	sed /etc/php/7.0/fpm/pool.d/www.conf -i -e "s|listen = /var/run/php7.0-fpm.sock|listen = 127.0.0.1:9000|g"
+	sed /etc/php/7.0/fpm/pool.d/www.conf -i -e "s|\;env\[PATH\]|env\[PATH\]|g"
 
 
-  ensureKeyValue "upload_max_filesize" "2000M" "/etc/php5/fpm/php.ini"
-  ensureKeyValue "post_max_size" "2000M" "/etc/php5/fpm/php.ini"
-  ensureKeyValue "default_charset" "UTF-8" "/etc/php5/fpm/php.ini"
+  ensureKeyValue "upload_max_filesize" "2000M" "/etc/php/7.0/fpm/php.ini"
+  ensureKeyValue "post_max_size" "2000M" "/etc/php/7.0/fpm/php.ini"
+  ensureKeyValue "max_execution_time" "3600" "/etc/php/7.0/fpm/php.ini"
+  ensureKeyValue "max_input_time" "3600" "/etc/php/7.0/fpm/php.ini"
+  ensureKeyValue "default_charset" "UTF-8" "/etc/php/7.0/fpm/php.ini"
 
-  ensureKeyValue "upload_tmp_dir" "/srv/http/owncloud/data" "/etc/php5/fpm/php.ini"
+  ensureKeyValue "upload_tmp_dir" "/srv/http/owncloud/data" "/etc/php/7.0/fpm/php.ini"
   mkdir -p /srv/http/owncloud/data
   chown www-data:www-data /srv/http/owncloud/data
 
   sed /etc/nginx/sites-available/default -i -e "s|client_max_body_size [0-9]*[M]?;|client_max_body_size 2000M;|g"
 
-	/etc/init.d/php5-fpm restart
+	/etc/init.d/php7.0-fpm restart
 	/etc/init.d/nginx restart
 
 	# set ARM frequency to 800 MHz (or use the raspi-config tool to set clock speed)
@@ -266,7 +270,7 @@ function main_newinstall_apache()
   usermod -a -G www-data www-data
 
   # install all needed packages, e.g., Apache, PHP, SQLite
-  apt-get install -y apache2 openssl sendmail sendmail-bin ssl-cert libapache2-mod-php5 php5-cli php5-sqlite php5-mysql php5-gd php5-curl php5-common php5-cgi sqlite php-pear php-apc git-core ca-certificates dphys-swapfile bzip2 mariadb-server
+  apt-get install -y apache2 openssl sendmail sendmail-bin ssl-cert libapache2-mod-php7 php7.0-cli php7.0-sqlite php7.0-mysql php7.0-gd php7.0-curl php7.0-common php7.0-cgi sqlite php-pear php-apc git-core ca-certificates dphys-swapfile bzip2 mariadb-server php7.0-mbstring php7.0-zip redis-server php7.0-redis php7.0-intl
 
   # Change RAM settings 16 MB video RAM
   ensureKeyValueShort "gpu_mem" "16" "/boot/config.txt"
@@ -410,10 +414,12 @@ function main_uninstall()
 
   case $? in
    0)
-    apt-get remove -y nginx sendmail sendmail-bin openssl ssl-cert php5-cli php5-sqlite php5-gd php5-curl \
-                      apache2 php5-common php5-cgi sqlite php-pear php-apc git-core \
+    apt-get remove -y nginx sendmail sendmail-bin openssl ssl-cert php7.0-cli php7.0-sqlite3 php7.0-gd php7.0-curl \
+                      apache2 php7.0-common php7.0-cgi sqlite php-pear php-apcu git-core \
                       autoconf automake autotools-dev curl libapr1 libtool curl libcurl4-openssl-dev \
-                      php-xml-parser php5 php5-dev php5-gd php5-fpm php5-mysql memcached php5-memcache varnish dphys-swapfile bzip2 mariadb-server ntfs-3g
+                      php-xml php7.0 php7.0-dev php7.0-gd php7.0-fpm php7.0-mysql memcached php-memcache varnish dphys-swapfile bzip2 mariadb-server ntfs-3g \
+                      php7.0-mbstring php7.0-zip redis-server php7.0-redis php7.0-intl
+#                      php-xml-parser php7.0 php7.0-dev php7.0-gd php7.0-fpm php7.0-mysql memcached php7.0-memcache varnish dphys-swapfile bzip2 mariadb-server ntfs-3g
     apt-get -y autoremove 
     ;;
    *)
